@@ -2,10 +2,7 @@
 package com.example.orderservice
 
 import com.example.orderservice.Controller.OrderController
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -19,15 +16,35 @@ class OrderControllerTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
-    @Test
-    fun `should calculate total cost`() {
-        val requestBody = """{"apples": 2, "oranges": 3}"""
-        val expectedTotalCost = 2 * 0.6 + 3 * 0.25
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/order")
+    @Test
+    fun `should apply buy one get one free for apples and 3 for 2 on oranges`() {
+        val requestBody = """{"apples": 3, "oranges": 4}"""
+        mockMvc.perform(MockMvcRequestBuilders.post("/orders")
             .contentType(MediaType.APPLICATION_JSON)
             .content(requestBody))
             .andExpect(MockMvcResultMatchers.status().isOk)
-            .andExpect(MockMvcResultMatchers.jsonPath("$.totalCost").value(expectedTotalCost))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.totalCost").value(1.20 + 0.75))
     }
+
+    @Test
+    fun `should retrieve an order by ID`() {
+        val requestBody = """{"apples": 4, "oranges": 3}"""
+        mockMvc.perform(MockMvcRequestBuilders.post("/orders")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestBody))
+            .andExpect(MockMvcResultMatchers.status().isOk)
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/orders/1"))
+            .andExpect(MockMvcResultMatchers.status().isOk)
+            .andExpect(MockMvcResultMatchers.jsonPath("$.apples").value(4))
+    }
+
+    @Test
+    fun `should retrieve all orders`() {
+        mockMvc.perform(MockMvcRequestBuilders.get("/orders"))
+            .andExpect(MockMvcResultMatchers.status().isOk)
+    }
+
+
 }
